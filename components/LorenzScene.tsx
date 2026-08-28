@@ -1,6 +1,6 @@
 "use client";
 
-import { AdaptiveDpr, Grid, OrbitControls, PerformanceMonitor, Stars } from "@react-three/drei";
+import { Grid, OrbitControls, PerformanceMonitor, Stars } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
 import { useState } from "react";
@@ -19,9 +19,12 @@ const ATTRACTOR_CENTER: [number, number, number] = [0, 0, 25];
 
 export default function LorenzScene({ buffers }: LorenzSceneProps) {
   // Resolución de render adaptativa: arranca cerca del dpr nativo del
-  // dispositivo (hasta 3x, cubriendo iPhone "Pro") y drei la sube/baja
-  // sola (PerformanceMonitor + AdaptiveDpr) según el FPS real, en vez de
-  // fijar un tope de 2x que se ve borroso en pantallas retina de 3x.
+  // dispositivo (hasta 3x, cubriendo iPhone "Pro") y PerformanceMonitor la
+  // sube/baja sola según el FPS real, en vez de fijar un tope de 2x que se
+  // ve borroso en pantallas retina de 3x. No se usa AdaptiveDpr: su
+  // image-rendering:pixelated queda activo casi todo el tiempo en GPUs
+  // móviles bajo carga (el factor de performance rara vez es exactamente 1),
+  // lo que hacía ver las líneas de la trayectoria pixeladas/en bloques.
   const maxDpr = () => (typeof window === "undefined" ? 2 : Math.min(window.devicePixelRatio || 1, 3));
   const [dpr, setDpr] = useState(() => Math.min(maxDpr(), 1.5));
 
@@ -37,7 +40,6 @@ export default function LorenzScene({ buffers }: LorenzSceneProps) {
       dpr={dpr}
     >
       <PerformanceMonitor onIncline={() => setDpr(maxDpr())} onDecline={() => setDpr(1)} />
-      <AdaptiveDpr pixelated />
 
       <color attach="background" args={["#030308"]} />
       <fog attach="fog" args={["#030308", 140, 340]} />
@@ -74,7 +76,7 @@ export default function LorenzScene({ buffers }: LorenzSceneProps) {
         maxDistance={260}
       />
 
-      <EffectComposer multisampling={0}>
+      <EffectComposer multisampling={4}>
         <Bloom
           mipmapBlur
           intensity={0.9}
