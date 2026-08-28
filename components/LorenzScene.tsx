@@ -18,11 +18,12 @@ interface LorenzSceneProps {
 const ATTRACTOR_CENTER: [number, number, number] = [0, 0, 25];
 
 export default function LorenzScene({ buffers }: LorenzSceneProps) {
-  // Resolución de render adaptativa: arranca en 1.5x y drei la sube/baja
-  // sola (PerformanceMonitor + AdaptiveDpr) según el FPS real del
-  // dispositivo, en vez de fijar dpr=2 y forzar el bloom/vignette a
-  // sombrear 4x los píxeles en cualquier pantalla retina.
-  const [dpr, setDpr] = useState(1.5);
+  // Resolución de render adaptativa: arranca cerca del dpr nativo del
+  // dispositivo (hasta 3x, cubriendo iPhone "Pro") y drei la sube/baja
+  // sola (PerformanceMonitor + AdaptiveDpr) según el FPS real, en vez de
+  // fijar un tope de 2x que se ve borroso en pantallas retina de 3x.
+  const maxDpr = () => (typeof window === "undefined" ? 2 : Math.min(window.devicePixelRatio || 1, 3));
+  const [dpr, setDpr] = useState(() => Math.min(maxDpr(), 1.5));
 
   return (
     <Canvas
@@ -35,7 +36,7 @@ export default function LorenzScene({ buffers }: LorenzSceneProps) {
       }}
       dpr={dpr}
     >
-      <PerformanceMonitor onIncline={() => setDpr(2)} onDecline={() => setDpr(1)} />
+      <PerformanceMonitor onIncline={() => setDpr(maxDpr())} onDecline={() => setDpr(1)} />
       <AdaptiveDpr pixelated />
 
       <color attach="background" args={["#030308"]} />
